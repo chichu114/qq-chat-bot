@@ -7,6 +7,11 @@
 替换、本地管理面板、加密备份和受限自动恢复。它适合愿意自行维护 QQ、模型与本地服务的
 技术用户，不是免配置的托管机器人平台。
 
+本项目的部分功能改进与整体工程思路来自对
+[AstrBot](https://github.com/AstrBotDevs/AstrBot) 开源实践的学习与参考，
+并在此基础上针对 NapCatQQ / OneBot、本地 OpenClaw / Ollama、可靠投递、
+按群风格模型和受限自愈等个人部署场景实现独立方案。
+
 ## 功能概览
 
 - **私聊智能体**：白名单用户可以通过 QQ 使用 OpenClaw，并保留连续会话；
@@ -1141,3 +1146,10 @@ scripts/check_ready.sh
 - `src/qq_openclaw_dashboard/`：面板控制器、HTTP 服务和静态界面。
 - `src/qq_openclaw_watchdog/`：健康检查、受限重启、状态快照和 macOS 异常通知。
 - `tests/`：自动化测试。
+
+## 致谢
+
+特别感谢 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 团队与社区的开源贡献。
+本项目的部分改进思路来自 AstrBot 在即时通信智能体、模型接入、功能扩展和
+可视化运维方面的公开实践。QQ Agent Bridge 是独立项目，与 AstrBot 团队不存在
+官方隶属或背书关系。
