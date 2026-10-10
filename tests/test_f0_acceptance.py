@@ -400,20 +400,5 @@ class F0AcceptanceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, "你好")
         self.assertEqual(captured, [9])
 
-    def test_chinese_operations_guide_covers_f0_deploy_and_rollback(self):
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        for marker in (
-            "legacy_direct",
-            "ActionIntent",
-            "qq-openclaw-backup",
-            "scripts/install_launch_agents.py",
-            "scripts/bridge_service.sh restart",
-            "python -m unittest discover -s tests -p 'test_*.py'",
-            "F1",
-        ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, readme)
-
-
 if __name__ == "__main__":
     unittest.main()

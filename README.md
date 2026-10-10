@@ -1,8 +1,22 @@
-# QQ 个人账号 OpenClaw 私聊桥接
+# QQ Agent Bridge
 
-这个项目是在 NapCatQQ 与 OneBot v11 之上增加智能体能力的本地桥接服务。
+一个面向个人部署的本地 QQ 智能体：使用 NapCatQQ 登录普通 QQ 账号，通过 OneBot v11
+收发消息，并将私聊接入 OpenClaw、将授权群聊接入 Ollama 风格模型。
 
-## 架构定位：在 NapCat + OneBot 之上的升级
+项目不仅提供基础消息转发，还包含白名单、记忆与待办、可靠投递、群聊风格、敏感词谐音
+替换、本地管理面板、加密备份和受限自动恢复。它适合愿意自行维护 QQ、模型与本地服务的
+技术用户，不是免配置的托管机器人平台。
+
+## 功能概览
+
+- **私聊智能体**：白名单用户可以通过 QQ 使用 OpenClaw，并保留连续会话；
+- **群聊风格 Agent**：指定群聊可绑定独立 Ollama 模型，支持 `@`、回复和主动插话；
+- **个人管理**：提供长期记忆、风格反馈、待办、重复提醒、早报和晚间复盘；
+- **可靠运行**：使用 SQLite、持久化发件箱、重试、熔断、备份和 watchdog；
+- **安全控制**：限制消息来源、频率和长度，高风险操作需要二次确认；
+- **风格训练**：包含 KanagawaWave v2 数据集流水线和固定 Qwen3-4B QLoRA 配方。
+
+## 架构：在 NapCat + OneBot 之上的智能体层
 
 NapCatQQ 提供 QQ 登录与会话层，OneBot v11 提供标准事件与动作协议；本项目在它们
 上方增加消息路由、权限策略、模型调用、可靠投递和健康恢复。这是对现有架构的能力扩展，
@@ -13,7 +27,7 @@ QQ -> NapCatQQ -> OneBot v11 WebSocket -> 本项目桥接与策略层
    -> OpenClaw / Ollama -> 可靠发件箱 -> OneBot v11 -> NapCatQQ -> QQ
 ```
 
-主要升级包括：
+本项目增加的主要能力包括：
 
 - 私聊与群聊分流：私聊可走 OpenClaw，授权群聊可绑定独立 Ollama 风格模型；
 - KanagawaWave 风格模型：支持 `@`/回复触发、模型判断后的主动插话和按群绑定；
@@ -21,24 +35,32 @@ QQ -> NapCatQQ -> OneBot v11 WebSocket -> 本项目桥接与策略层
 - 可靠发件箱：模型完成和 QQ 投递分离，支持去重、重试和失败审计；
 - 受限自愈监控：独立 watchdog 检查 Bridge、OneBot 与 NapCat 状态，并在阈值内恢复。
 
-项目各阶段、已完成能力、默认关闭模块和后续路线见
-[总体设计与完成状态](docs/overall-design-status-zh.md)。
+## 项目状态与文档
 
-## 重要提醒
+核心私聊、Ollama 群聊、记忆与待办、可靠投递、Dashboard、加密备份和 watchdog 已有
+实现与自动化测试。社区风格学习、媒体、引用和实验性智能路由默认关闭，需要部署者逐项
+配置并验收。外部业务连接器、正式多 Agent 协作和通用训练器仍在规划中。
+
+- [项目架构与开发进度](docs/overall-design-status-zh.md)：适合第一次了解项目的读者；
+- [KanagawaWave v2 训练说明](training/kanagawawave_v2/README_zh.md)：数据集、训练、合并与 Ollama 导入；
+- [影子路由运维手册](docs/f1-shadow-routing-runbook-zh.md)：实验性路由的启用、观察和回滚。
+
+## 安全与使用边界
 
 普通个人 QQ 号方案依赖非官方 QQ 协议工具，可能因为 QQ 行为变化而失效，也可能带来账号风控风险。建议使用备用 QQ 号，并保持第一版只允许自己或少数白名单账号私聊。
 
-当前默认支持：
+当前主要支持：
 
 - 私聊文本消息、长期记忆、待办提醒和受限长任务
 - 白名单 QQ 用户
 - echo 测试适配器、本地 OpenClaw CLI 适配器或 HTTP 形式的 OpenClaw 适配器
 - 基础限流、兜底回复和长回复截断
 - 风格学习：你在私聊里反馈语气，桥接服务会写入 OpenClaw 工作区的 `STYLE.md`
-- 可选 E4-A 图片、语音、文件和引用消息；默认关闭，需独立配置媒体 API
+- 可选的图片、语音、文件和引用消息；默认关闭，需独立配置媒体 API
 - 可选的独立群聊风格 Agent：定时从已获作者授权的 Reddit/贴吧内容提取表达风格并按群绑定；可另行开启本地 Ollama 判断后的主动插话，默认关闭
 
-群聊 Agent 不支持群发、命令/工具链、长期群聊记忆或把来源正文当作知识库。项目也不支持任意本地 shell 执行、支付能力，以及 E4-B/E4-C 的日历、邮件、搜索、多 Agent 自动协作。
+群聊 Agent 不支持群发、命令/工具链、长期群聊记忆或把来源正文当作知识库。项目也不支持
+任意本地 shell 执行、支付能力；日历、邮件等业务连接器和正式多 Agent 协作仍在规划中。
 
 ## 本地准备
 
@@ -59,7 +81,7 @@ cp .env.example .env
 - `ALLOWED_QQ_USERS`：允许触发智能体的 QQ 号，用英文逗号分隔。
 - `AGENT_ADAPTER`：先用 `echo` 跑通链路；接本地 OpenClaw CLI 时改成 `openclaw-cli`。
 - `OPENCLAW_COMMAND`：本项目的 OpenClaw 启动脚本，默认 `scripts/openclaw.sh`。
-- `OPENCLAW_AGENT_ID`：桥接明确调用的 OpenClaw Agent，默认 `main`；E1 专用 Agent 使用 `qq`。
+- `OPENCLAW_AGENT_ID`：桥接明确调用的 OpenClaw Agent，默认 `main`；专用 Agent 可使用 `qq`。
 - `OPENCLAW_MODEL`：可选的模型覆盖，例如 `openai/gpt-5.5`。
 - `ENABLE_STYLE_MEMORY`：是否启用风格学习，默认 `true`。
 - `STYLE_MEMORY_PATH`：风格反馈写入的文件，默认 `~/.openclaw/workspace/STYLE.md`。
@@ -74,23 +96,23 @@ cp .env.example .env
 - `ENABLE_EVENING_REVIEW`：是否启用晚间复盘提示，默认 `true`。
 - `EVENING_REVIEW_TIME`：晚间复盘时间，默认 `23:00`。
 - `QUIET_HOURS_START` / `QUIET_HOURS_END`：免打扰时段，默认 `00:00-08:30`。
-- `ENABLE_SECURITY_CONFIRMATION`：是否启用 C3 高风险操作二次确认，默认 `true`。
+- `ENABLE_SECURITY_CONFIRMATION`：是否启用高风险操作二次确认，默认 `true`。
 - `CONFIRMATION_TIMEOUT_SECONDS`：确认单有效时间，默认 `120` 秒。
-- `ENABLE_AUTO_BACKUP`：是否启用 D2 自动备份，默认 `true`。
+- `ENABLE_AUTO_BACKUP`：是否启用自动备份，默认 `true`。
 - `AUTO_BACKUP_INTERVAL_HOURS`：自动备份间隔，默认 `24` 小时。
 - `AUTO_BACKUP_RETENTION_DAYS`：自动备份保留天数，默认 `30` 天。
 - `AUTO_BACKUP_MAX_FILES`：自动备份最多保留份数，默认 `30` 份。
 - `AUTO_BACKUP_DIR`：备份目录，默认项目内的 `backups`。
-- `ENABLE_SQLITE_STORE`：是否使用 E1 SQLite WAL 状态库，默认 `true`。
+- `ENABLE_SQLITE_STORE`：是否使用 SQLite WAL 状态库，默认 `true`。
 - `STATE_DATABASE_PATH`：动态状态数据库路径，默认 `~/.openclaw/workspace/chichu.sqlite3`。
-- `ENABLE_MEDIA_PIPELINE`：启用 E4-A 图片、语音和文件处理，默认 `false`。
+- `ENABLE_MEDIA_PIPELINE`：启用图片、语音和文件处理，默认 `false`。
 - `ENABLE_LONG_TASKS`：启用长任务接单、进度和取消，默认 `false`，可独立开启。
 - `NAPCAT_MEDIA_ROOTS` / `MEDIA_REMOTE_ALLOWED_HOSTS`：允许读取的 NapCat 本地根目录或精确远端主机白名单；媒体模式至少配置一项。
 - `MEDIA_API_BASE_URL`、`MEDIA_IMAGE_MODEL`、`MEDIA_AUDIO_MODEL`：独立媒体 API 与模型，不复用主对话模型配置。
 - `MEDIA_API_SECRET_REF`：推荐填写 `keychain:服务名:账户名`；`MEDIA_API_KEY` 只保留兼容用途。
 - `MEDIA_API_DAILY_BUDGET`：媒体 API 每日费用保险丝；`0` 表示禁止付费媒体调用。
 - `MEDIA_CACHE_DIR` / `MEDIA_CACHE_TTL_SECONDS`：受限缓存目录与过期时间，默认 1 小时。
-- `ENABLE_WATCHDOG`：是否启用 D3 独立自愈监控，默认 `true`。
+- `ENABLE_WATCHDOG`：是否启用独立自愈监控，默认 `true`。
 - `WATCHDOG_CHECK_INTERVAL_SECONDS`：健康检查间隔；实时监测建议设为 `10` 秒。
 - `WATCHDOG_FAILURE_THRESHOLD`：桥接连续失败多少次后尝试重启，默认 `3` 次。
 - `WATCHDOG_ONEBOT_FAILURE_THRESHOLD`：OneBot 连续报告离线多少次后自动恢复，建议 `2` 次。
@@ -146,7 +168,7 @@ ollama pull qwen3:8b
 
 `ollama pull` 的含义和其他命令可查 [Ollama 官方 CLI 文档](https://docs.ollama.com/cli)。
 默认只连接 `http://127.0.0.1:11434`。只有把 JSON 的 `allow_remote` 明确设为
-`true` 后，Task 1 配置契约才允许远端 Ollama；readiness 会对这个已授权地址执行健康
+`true` 后，配置校验才允许远端 Ollama；readiness 会对这个已授权地址执行健康
 探测。远端部署应使用可信 HTTPS 端点，并由运营者承担传输、访问控制和数据离开本机的
 风险。无论本地或远端，readiness 都只用五秒超时调用 `/api/tags`，不会生成回复或
 拉取模型。
@@ -221,9 +243,9 @@ set +a
 scripts/bridge_service.sh restart
 ```
 
-readiness 是只读检查：它验证 Task 1 bootstrap/JSON，把源 SQLite 主库和复制期间保持
+readiness 是只读检查：它验证启动配置，把源 SQLite 主库和复制期间保持
 不变的 WAL 只读复制到系统临时目录，仅在临时副本上以 `mode=ro + query_only` 汇总
-Task 3 状态，再调用 Task 4 的 Ollama `/api/tags` 健康接口。它不会让 SQLite 打开源库，
+学习状态，再调用 Ollama `/api/tags` 健康接口。它不会让 SQLite 打开源库，
 也不在源目录创建或修改数据库、WAL、SHM、锁或表；不会迁移、同步、推进游标、发 QQ、
 生成回复或下载模型。只有复制前后印章变化、sidecar 增删/替换等可证实的源库并发变化，
 或存在热 journal 时才返回 `database=busy`；无法证明源库变化的复制 I/O 或临时资源
@@ -361,7 +383,7 @@ scripts/check_ready.sh --smoke-openclaw
 
 这个命令会真实调用一次模型，可能消耗 API 用量。
 
-切到 F0 `direct` 后，可显式做一次编排探测：
+切到 `direct` 编排模式后，可显式做一次编排探测：
 
 ```bash
 scripts/check_ready.sh --smoke-orchestration
@@ -432,7 +454,7 @@ ${HOME}/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm approv
 scripts/openclaw.sh setup --non-interactive --accept-risk --workspace "$HOME/.openclaw/workspace"
 ```
 
-E2 默认通过常驻 Gateway 调用 OpenClaw。若提示 Gateway 未启动，请先运行 `bash scripts/openclaw.sh gateway start`，再重新启动 QQ 智能体。只有显式设置 `OPENCLAW_USE_GATEWAY=false` 时才会退回本地嵌入模式。
+默认通过常驻 Gateway 调用 OpenClaw。若提示 Gateway 未启动，请先运行 `bash scripts/openclaw.sh gateway start`，再重新启动 QQ 智能体。只有显式设置 `OPENCLAW_USE_GATEWAY=false` 时才会退回本地嵌入模式。
 
 配置模型：
 
@@ -473,7 +495,7 @@ scripts/bridge_service.sh restart
 
 如果 QQ 收到的是 `智能体暂时不可用，请稍后再试。`，先看桥接服务终端里的错误。常见原因是 Clash 代理没开、代理端口变了、OpenAI API 超时或 `.env` 没有重新加载。
 
-## 第二阶段：让 chichu 学你的语气
+## 让 chichu 学你的语气
 
 桥接服务现在会先识别一小类“风格反馈”。这些消息不会发给模型消耗 API，而是直接写入：
 
@@ -481,9 +503,9 @@ scripts/bridge_service.sh restart
 ~/.openclaw/workspace/STYLE.md
 ```
 
-### B1：固化 chichu 人设内核
+### 固化 chichu 人设内核
 
-如果 OpenClaw 工作区被重置，或者 chichu 又开始像“刚初始化的代理”，可以重新安装 B1 人设内核：
+如果 OpenClaw 工作区被重置，或者 chichu 又开始像“刚初始化的代理”，可以重新安装人设内核：
 
 ```bash
 python3 scripts/install_persona_b1.py ~/.openclaw/workspace
@@ -494,9 +516,9 @@ python3 scripts/install_persona_b1.py ~/.openclaw/workspace
 - `~/.openclaw/workspace/SOUL.md`
 - `~/.openclaw/workspace/STYLE.md`
 
-它只替换 `B1 人设内核` 和 `B1 风格内核` 这两个受控小节，不会清掉 `STYLE.md` 里的用户反馈沉淀。也就是说，它负责把 chichu 的身份证钉牢，不会顺手把她的成长记录擦了，没那么粗暴。
+它只替换 `B1 人设内核` 和 `B1 风格内核` 这两个受控小节，不会清掉 `STYLE.md` 里的用户反馈沉淀。这两个名称是工作区文件中的兼容标记，并不代表需要按开发阶段操作。
 
-### B2：本地身份问答兜底
+### 本地身份问答兜底
 
 下面这些身份问题会由桥接服务本地直接回复，不调用模型：
 
@@ -506,7 +528,7 @@ python3 scripts/install_persona_b1.py ~/.openclaw/workspace
 
 这样 chichu 的名字、身份和管家感不会因为模型上下文波动而乱飘。她至少得知道自己是谁，不然还管什么家，先管管自己吧。
 
-### B3：风格反馈升级
+### 风格反馈
 
 可以直接给机器人 QQ 发：
 
@@ -524,7 +546,7 @@ python3 scripts/install_persona_b1.py ~/.openclaw/workspace
 
 收到这类消息后，chichu 会短回复一句确认，并把反馈沉淀到 `STYLE.md` 的 `用户反馈沉淀` 小节。之后正常聊天时，OpenClaw 会继续读取工作区里的风格文件。
 
-### B4：风格账本管理
+### 风格账本管理
 
 可以直接给机器人 QQ 发：
 
@@ -534,7 +556,7 @@ python3 scripts/install_persona_b1.py ~/.openclaw/workspace
 - `删除风格 1`
 - `清空风格反馈`
 
-这些口令也不会调用模型。`查看风格` 和 `风格沉淀` 会列出当前沉淀；`风格自检` 会统计数量并显示最近几条；`删除风格 1` 会删掉指定编号；`清空风格反馈` 只清空 `用户反馈沉淀` 小节里的列表，不会动 B1 人设内核。账本终于能自己翻了，不用你亲自当文件管理员。
+这些口令也不会调用模型。`查看风格` 和 `风格沉淀` 会列出当前沉淀；`风格自检` 会统计数量并显示最近几条；`删除风格 1` 会删掉指定编号；`清空风格反馈` 只清空 `用户反馈沉淀` 小节里的列表，不会动受控人设内核。
 
 如果想暂停这个能力，把 `.env` 改成：
 
@@ -544,7 +566,7 @@ ENABLE_STYLE_MEMORY=false
 
 然后重启 `启动QQ智能体.app`。
 
-## 第三阶段：长期记忆和待办
+## 长期记忆和待办
 
 桥接服务现在会先处理一批本地管家命令。这些命令不会调用模型，也不会消耗 API；chichu 会直接写入 OpenClaw 工作区：
 
@@ -609,7 +631,7 @@ ENABLE_STYLE_MEMORY=false
 - `每周一 9:30`
 - `每月1号 9:00`
 
-### C2：智能待办管理
+### 智能待办管理
 
 给机器人 QQ 发：
 
@@ -622,7 +644,7 @@ ENABLE_STYLE_MEMORY=false
 
 改期会清掉旧的已提醒状态，保留事项内容和分类。无法识别或不合法的时间不会写入文件。这些管理口令由本地桥接服务处理，不调用模型，也不消耗 API。
 
-### C3：高风险操作二次确认
+### 高风险操作二次确认
 
 下面这些本地操作不会立即执行：
 
@@ -646,7 +668,7 @@ ENABLE_SECURITY_CONFIRMATION=true
 CONFIRMATION_TIMEOUT_SECONDS=120
 ```
 
-## D1：本地可视化管理面板
+## 本地可视化管理面板
 
 双击桌面的 `打开QQ智能体面板.app`，浏览器会打开：
 
@@ -658,7 +680,7 @@ http://127.0.0.1:18790
 
 当前面板支持：
 
-- 查看桥接进程、OneBot、OpenClaw 和 C3 二次确认状态。
+- 查看桥接进程、OneBot、OpenClaw 和二次确认状态。
 - 启动、停止和重启 QQ 智能体。
 - 新增、删除和清空长期记忆。
 - 新增、完成、删除、改期待办，以及取消到点提醒。
@@ -686,7 +708,7 @@ scripts/dashboard_service.sh status
 scripts/dashboard_service.sh stop
 ```
 
-## D2：自动备份与恢复点
+## 自动备份与恢复点
 
 QQ 智能体启动后会立即检查自动备份；没有可用自动备份时会创建第一份，之后默认每 24 小时创建一次。备份包含：
 
@@ -715,9 +737,9 @@ AUTO_BACKUP_MAX_FILES=30
 AUTO_BACKUP_DIR=backups
 ```
 
-修改后重启 QQ 智能体。打开 D1 面板的“备份恢复”页面，可以查看备份类型和完整性、创建手动备份、单独校验、执行保留策略或恢复指定版本。
+修改后重启 QQ 智能体。打开管理面板的“备份恢复”页面，可以查看备份类型和完整性、创建手动备份、单独校验、执行保留策略或恢复指定版本。
 
-## D3：健康检查与受限自愈
+## 健康检查与受限自愈
 
 双击“启动QQ智能体.app”时会同时启动独立 watchdog；双击“停止QQ智能体.app”或在面板中停止时，会先关闭 watchdog，避免你主动停机后又被自动拉起。管理面板顶部会显示自愈状态，总览中可以看到最近检查、当前重启次数和异常原因。
 
@@ -747,17 +769,17 @@ NAPCAT_WEBUI_URL=http://127.0.0.1:6099
 NAPCAT_WEBUI_CONFIG_PATH="~/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/NapCat/config/webui.json"
 ```
 
-## E1：安全与数据底座
+## 安全与数据底座
 
 QQ 桥接明确路由到独立的 OpenClaw `qq` Agent。该 Agent 使用 Docker 沙箱，宿主工作区只读挂载，关闭 elevated，并采用双层工具白名单。允许的能力只有读取人格工作区、长期记忆检索、网页检索和会话状态；执行命令、写文件、外发消息、浏览器控制和创建子 Agent 均被硬性拒绝。
 
 动态状态以 `chichu.sqlite3` 为主存储，开启 WAL、完整同步和跨进程文件锁；`MEMORY.md`、`TODO.md`、`STYLE.md`、`REMINDER_STATE.md` 继续作为可读导出。启用 SQLite 后不要直接编辑这些导出文件，否则下一次读取会恢复数据库里的正式版本；请通过 QQ 指令或管理面板修改。
 
-E1 同时包含：六位审批码、审批记录持久化、SQLite 一致性备份、完整人格文件备份、正数配置校验，以及 `.env`、日志、数据库和锁文件的最小权限。
+这一层同时包含：六位审批码、审批记录持久化、SQLite 一致性备份、完整人格文件备份、正数配置校验，以及 `.env`、日志、数据库和锁文件的最小权限。
 
 ### SQLite ownership 来源边界
 
-Task 7 的受控 Python 写入接口只接受 `1..10^20-1` 范围内的真正整数作为
+受控 Python 写入接口只接受 `1..10^20-1` 范围内的真正整数作为
 `user_id`；`bool`、字符串、浮点数、零、负数和超界值都会在写入前被拒绝。
 直接修改 SQLite 属于可信管理边界。SQLite 的 INTEGER affinity 会把 SQL
 `TRUE` 存成整数 `1`，落库后它与调用方直接写入的合法整数 `1` 无法区分，
@@ -765,9 +787,9 @@ Task 7 的受控 Python 写入接口只接受 `1..10^20-1` 范围内的真正整
 保证畸形或相互冲突的持久 ownership 不会越权或阻塞队列，但不承诺从已规范
 化的整数反推出原始 SQL 表达式。
 
-## E2：常驻 Gateway 与可靠消息链路
+## 常驻 Gateway 与可靠消息链路
 
-E2 默认使用 `OPENCLAW_USE_GATEWAY=true`，桥接 CLI 不再添加 `--local`，而是把 Agent 回合交给本机 `127.0.0.1:18789` 上的常驻 OpenClaw Gateway。模型调用在线程工作器中执行，OneBot WebSocket、提醒和备份不会再被单次模型请求阻塞；同一 QQ 的会话严格串行，不同 QQ 可在并发上限内同时处理。
+默认使用 `OPENCLAW_USE_GATEWAY=true`，桥接 CLI 不再添加 `--local`，而是把 Agent 回合交给本机 `127.0.0.1:18789` 上的常驻 OpenClaw Gateway。模型调用在线程工作器中执行，OneBot WebSocket、提醒和备份不会再被单次模型请求阻塞；同一 QQ 的会话严格串行，不同 QQ 可在并发上限内同时处理。
 
 SQLite schema v2 新增入站消息去重、可靠发件箱和运行指标。回复与提醒先落库再发送，临时断线会指数退避重试，重启后继续；同一个 `message_id` 或提醒通知不会重复投递。连续模型故障达到阈值后会短暂熔断，避免故障线路被反复调用。
 
@@ -880,9 +902,9 @@ python3 -m unittest discover -s tests -v
 
 当前测试覆盖配置加载、OneBot 文本解析、私聊过滤、白名单、限流、Gateway 与本地适配器、异步并发、单用户会话顺序、消息去重、可靠发件箱、重试与熔断、风格学习、长期记忆、SQLite WAL 与 Markdown 导出、持久审批码、待办分类、重复提醒、提醒暂停/恢复、免打扰、每日早报、晚间复盘、到点提醒推送、一致性备份、兜底回复、长回复截断和不支持消息类型提示。
 
-## E3：长期记忆 2.0
+## 长期记忆 2.0
 
-E3 在 E2.5 模块化底座上增加四层记忆：人格核心、已确认用户档案、动态风格和已确认长期记忆。普通对话会保存到 SQLite；达到阈值后，独立轻量模型在后台生成摘要并提取候选事实，不会阻塞 QQ 回复。候选事实只有经过用户确认才会进入主模型上下文。
+长期记忆 2.0 在模块化底座上增加四层记忆：人格核心、已确认用户档案、动态风格和已确认长期记忆。普通对话会保存到 SQLite；达到阈值后，独立轻量模型在后台生成摘要并提取候选事实，不会阻塞 QQ 回复。候选事实只有经过用户确认才会进入主模型上下文。
 
 QQ 可用的新指令：
 
@@ -898,7 +920,7 @@ QQ 可用的新指令：
 
 检索采用关键词和本地特征向量混合排序，只注入当前问题相关的已确认事实与摘要。`AgentRequest.context` 与用户原始消息分离，因此安全确认和本地指令不会被记忆上下文改写。
 
-E3 配置：
+相关配置：
 
 ```dotenv
 ENABLE_MEMORY_2=true
@@ -931,9 +953,9 @@ MEMORY_CANDIDATE_MIN_CONFIDENCE_PERCENT=75
 
 详细设计见 `docs/superpowers/specs/2026-07-17-e3-long-term-memory-2-design.md`。
 
-## E4-A：媒体、引用与长任务
+## 媒体、引用与长任务
 
-E4-A 默认关闭。推荐先保持 `ENABLE_MEDIA_PIPELINE=false`、`ENABLE_LONG_TASKS=false` 完成纯文本回归，再分两步启用。
+媒体与长任务默认关闭。推荐先保持 `ENABLE_MEDIA_PIPELINE=false`、`ENABLE_LONG_TASKS=false` 完成纯文本回归，再分两步启用。
 
 ### 支持范围与限制
 
@@ -989,11 +1011,11 @@ MEDIA_API_DAILY_BUDGET=1.00
 
 缓存默认位于 `~/.openclaw/workspace/media-cache`，运行时按 `MEDIA_CACHE_TTL_SECONDS` 清理，目录权限必须为 `0700`。缓存不进入备份。
 
-遇到异常时先把对应开关改回 `false` 并重启。关闭媒体后纯文本、记忆、提醒、审批和 Outbox 继续工作；数据库 schema v5 和历史统计可以保留，无需降级数据库。E4-B（日历、邮件、搜索等外部能力）与 E4-C（管家/记忆/调度/编码多 Agent）不在本阶段。
+遇到异常时先把对应开关改回 `false` 并重启。关闭媒体后纯文本、记忆、提醒、审批和 Outbox 继续工作；数据库 schema v5 和历史统计可以保留，无需降级数据库。日历、邮件等外部业务连接器与正式多 Agent 协作仍属于后续规划。
 
-## E2.5 模块化控制平面
+## 模块化控制平面
 
-E2.5 在不删除既有功能的前提下完成模块化重组。当前仍使用 `DirectPlanningStrategy + SingleAgentExecutionEngine`：每条需要模型处理的 QQ 消息只调用一次原有 OpenClaw Agent，不会因为重构额外消耗 API Token。
+模块化控制平面在不删除既有功能的前提下重组代码边界。当前仍使用 `DirectPlanningStrategy + SingleAgentExecutionEngine`：每条需要模型处理的 QQ 消息只调用一次原有 OpenClaw Agent，不会因为重构额外消耗 API Token。
 
 新增的 A++ 契约包括 `TaskContract`、规划策略、执行引擎、验收策略、预算策略、能力档案、头脑风暴开关和追踪端口。双模型议会、四级路由、DAG 工作包和非对称审计尚未启用；后续可通过实现这些端口接入，而无需改动 QQ 收发、Outbox、提醒或 SQLite Repository。
 
@@ -1008,14 +1030,14 @@ E2.5 在不删除既有功能的前提下完成模块化重组。当前仍使用
 
 扩展新能力时应优先新增策略、Repository 或领域服务，并在 `runtime/composition.py` 集中装配。不要让领域模块直接导入 CLI、HTTP Server、SQLite 或 OneBot。
 
-## F0 编排上线与回滚
+## 编排模式与回滚
 
-F0 只有两种可用模式：
+目前只有两种可用模式：
 
 - `legacy_direct`：兼容路径，保留原来的单模型调用流程，是部署和回滚默认值。
 - `direct`：通过新的 Runtime、追踪和策略接口调用同一个 Agent；普通文本仍只调用一次模型，本地命令调用零次。
 
-F1 影子路由现已实现但默认关闭：它只记录 L0-L3 决策，不接管 Direct 回复。启用、分类器安装、标注、验收和回滚见[中文 F1 影子路由运维手册](docs/f1-shadow-routing-runbook-zh.md)；双模型议会、DAG 工作包和非对称审计仍未实现。
+影子路由现已实现但默认关闭：它只记录 L0-L3 决策，不接管 Direct 回复。启用、分类器安装、标注、验收和回滚见[影子路由运维手册](docs/f1-shadow-routing-runbook-zh.md)；双模型交叉审核、任务图工作包和非对称审计仍未实现。
 
 分类器默认使用兼容的 OpenClaw transport。设置
 `ROUTING_CLASSIFIER_TRANSPORT=responses_api` 可改用直连 Responses API；它从
@@ -1070,7 +1092,7 @@ Bridge、Dashboard 和 Watchdog 的进程所有权只属于当前用户的 Launc
 3. 确认 OneBot、Gateway、SQLite、Outbox、管理台和 watchdog 健康。
 4. 用白名单 QQ 发送一条普通文本和一条 `你是谁`，记录回复与模型调用数。
 5. 在管理台切到 `direct`，执行 `scripts/bridge_service.sh restart`，重复两条消息并比较证据。
-6. 只有验收通过后才保持 `direct`；F1 和 E4 仍维持关闭。
+6. 只有验收通过后才保持 `direct`；影子路由、媒体和其他可选模块仍维持关闭。
 
 回滚时，在管理台把模式改回 `legacy_direct`，然后执行：
 
@@ -1103,7 +1125,7 @@ scripts/check_ready.sh
 - `src/qq_openclaw_bridge/housekeeper.py`：保持旧 API 的管家兼容入口。
 - `src/qq_openclaw_bridge/reminders.py`：到点提醒扫描、重复提醒推进、免打扰、每日早报和晚间复盘。
 - `src/qq_openclaw_bridge/style_memory.py`：风格反馈记录。
-- `src/qq_openclaw_bridge/backups.py`：D2 自动备份、完整性校验、保留策略和安全恢复。
+- `src/qq_openclaw_bridge/backups.py`：自动备份、完整性校验、保留策略和安全恢复。
 - `src/qq_openclaw_bridge/storage.py`：保持旧 API 的 Repository 兼容外观。
 - `src/qq_openclaw_bridge/bridge.py`：保持旧 API 的消息桥接兼容外观。
 - `scripts/start_bridge.sh`：前台调试桥接服务。
@@ -1111,7 +1133,7 @@ scripts/check_ready.sh
 - `scripts/bridge_service.sh`：通过 LaunchAgent 启动、停止和查看桥接服务状态。
 - `scripts/show_logs.sh`：查看或打开最近运行日志。
 - `scripts/dashboard_service.sh`：启动、停止和检查本地管理面板。
-- `scripts/watchdog_service.sh`：启动、停止和检查 D3 独立自愈监控。
+- `scripts/watchdog_service.sh`：启动、停止和检查独立自愈监控。
 - `apps/启动QQ智能体.app`：双击后台启动桥接服务。
 - `apps/停止QQ智能体.app`：双击停止后台桥接服务。
 - `apps/查看QQ智能体日志.app`：双击打开运行日志。
