@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+if [[ ! -f "$PROJECT_DIR/scripts/bridge_service.sh" ]]; then
+  PROJECT_DIR="${HOME}/qq-chat-bot"
+fi
+SERVICE_SCRIPT="$PROJECT_DIR/scripts/bridge_service.sh"
+WATCHDOG_SCRIPT="$PROJECT_DIR/scripts/watchdog_service.sh"
+
+if /bin/bash "$WATCHDOG_SCRIPT" stop >/tmp/qq-openclaw-stop.out 2>&1 \
+  && /bin/bash "$SERVICE_SCRIPT" stop >>/tmp/qq-openclaw-stop.out 2>&1; then
+  /usr/bin/osascript -e 'display notification "桥接服务已停止。" with title "QQ智能体"'
+  exit 0
+fi
+
+/usr/bin/osascript -e 'display dialog "QQ智能体停止失败。请查看项目里的 logs/bridge.log。" buttons {"好"} default button "好" with title "QQ智能体"'
+cat /tmp/qq-openclaw-stop.out >&2
+exit 1

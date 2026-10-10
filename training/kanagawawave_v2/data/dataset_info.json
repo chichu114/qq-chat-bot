@@ -1,0 +1,18 @@
+{
+  "forum_test_v2": {
+    "file_name": "forum_test.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "forum_train_v2": {
+    "file_name": "forum_train.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  }
+}

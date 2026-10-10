@@ -1,0 +1,8 @@
+{
+	"dependencies": {
+		"openclaw": "^2026.6.11"
+	},
+	"devDependencies": {
+		"npm": "^11.18.0"
+	}
+}

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+if [[ ! -f "$PROJECT_DIR/scripts/show_logs.sh" ]]; then
+  PROJECT_DIR="${HOME}/qq-chat-bot"
+fi
+LOG_SCRIPT="$PROJECT_DIR/scripts/show_logs.sh"
+
+if /bin/bash "$LOG_SCRIPT" --open >/tmp/qq-openclaw-logs.out 2>&1; then
+  exit 0
+fi
+
+/usr/bin/osascript -e 'display dialog "日志打开失败。请手动查看项目里的 logs/bridge.log。" buttons {"好"} default button "好" with title "QQ智能体"'
+cat /tmp/qq-openclaw-logs.out >&2
+exit 1

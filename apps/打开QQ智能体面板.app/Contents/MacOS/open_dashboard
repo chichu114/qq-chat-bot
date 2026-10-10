@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+if [[ ! -f "$PROJECT_DIR/scripts/dashboard_service.sh" ]]; then
+  PROJECT_DIR="${HOME}/qq-chat-bot"
+fi
+SERVICE_SCRIPT="$PROJECT_DIR/scripts/dashboard_service.sh"
+PORT="${DASHBOARD_PORT:-18790}"
+
+if /bin/bash "$SERVICE_SCRIPT" start >/tmp/qq-openclaw-dashboard.out 2>&1; then
+  /usr/bin/open "http://127.0.0.1:$PORT"
+  exit 0
+fi
+
+/usr/bin/osascript -e 'display dialog "QQ智能体面板启动失败。请查看项目里的 logs/dashboard.log。" buttons {"好"} default button "好" with title "chichu 管理台"'
+cat /tmp/qq-openclaw-dashboard.out >&2
+exit 1

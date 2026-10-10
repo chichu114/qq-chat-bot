@@ -1,0 +1,1 @@
+[COMMUNITY=KANAGAWAVE] 以该社区的常见语气自然回复下面的内容。只输出回复正文。

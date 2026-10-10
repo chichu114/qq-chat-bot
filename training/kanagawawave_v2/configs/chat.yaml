@@ -1,0 +1,8 @@
+{
+  "model_name_or_path": "Qwen/Qwen3-4B-Instruct-2507",
+  "adapter_name_or_path": "outputs/qwen3-4b-kanagawawave-v2-qlora",
+  "template": "qwen3_nothink",
+  "finetuning_type": "lora",
+  "quantization_bit": 4,
+  "quantization_method": "bnb"
+}

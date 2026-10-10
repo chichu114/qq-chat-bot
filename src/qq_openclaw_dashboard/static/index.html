@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="dashboard-token" content="__DASHBOARD_TOKEN__">
+  <title>chichu 管理台</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">QQ PRIVATE AGENT</p>
+      <h1>chichu 管理台</h1>
+    </div>
+    <div class="topbar-actions">
+      <span id="updatedAt" class="muted">正在读取状态</span>
+      <button id="refreshButton" class="button secondary" type="button">刷新</button>
+    </div>
+  </header>
+
+  <section class="status-strip" aria-label="连接状态">
+    <div class="status-item"><span id="bridgeDot" class="status-dot"></span><span>桥接服务</span><strong id="bridgeStatus">检查中</strong></div>
+    <div class="status-item"><span id="onebotDot" class="status-dot"></span><span>OneBot</span><strong id="onebotStatus">检查中</strong></div>
+    <div class="status-item"><span id="openclawDot" class="status-dot"></span><span>OpenClaw</span><strong id="openclawStatus">检查中</strong></div>
+    <div class="status-item"><span id="securityDot" class="status-dot"></span><span>审批码确认</span><strong id="securityStatus">检查中</strong></div>
+    <div class="status-item"><span id="watchdogDot" class="status-dot"></span><span>自愈监控</span><strong id="watchdogStatus">检查中</strong></div>
+  </section>
+
+  <div class="shell">
+    <nav class="sidebar" aria-label="管理功能">
+      <button class="nav-button active" data-view="overview" type="button">总览</button>
+      <button class="nav-button" data-view="memories" type="button">长期记忆 <span id="memoryCount" class="count">0</span></button>
+      <button class="nav-button" data-view="todos" type="button">待办提醒 <span id="todoCount" class="count">0</span></button>
+      <button class="nav-button" data-view="styles" type="button">风格沉淀 <span id="styleCount" class="count">0</span></button>
+      <button class="nav-button" data-view="tasks" type="button">长任务 <span id="taskCount" class="count">0</span></button>
+      <button class="nav-button" data-view="models" type="button">模型用量</button>
+      <button class="nav-button" data-view="approvals" type="button">审批 <span id="approvalCount" class="count">0</span></button>
+      <button class="nav-button" data-view="health" type="button">健康时间线</button>
+      <button class="nav-button" data-view="orchestration" type="button">编排控制</button>
+      <button class="nav-button" data-view="routing" type="button">影子路由</button>
+      <button class="nav-button" data-view="media" type="button">媒体设置</button>
+      <button class="nav-button" data-view="logs" type="button">运行日志</button>
+      <button class="nav-button" data-view="backups" type="button">备份恢复</button>
+    </nav>
+
+    <main class="content">
+      <section class="view active" id="view-overview">
+        <div class="section-heading"><div><p class="eyebrow">SYSTEM</p><h2>运行总览</h2></div><p>服务、连接和本地配置一眼看清。</p></div>
+        <div class="overview-grid">
+          <article class="panel service-panel">
+            <div class="panel-heading"><h3>智能体服务</h3><span id="serviceBadge" class="badge neutral">检查中</span></div>
+            <p id="serviceDetail" class="muted">正在读取桥接进程。</p>
+            <div class="button-row">
+              <button class="button primary" data-service="start" type="button">启动</button>
+              <button class="button secondary" data-service="restart" type="button">重启</button>
+              <button class="button danger-quiet" data-service="stop" type="button">停止</button>
+            </div>
+          </article>
+          <article class="panel metric-panel"><span>长期记忆</span><strong id="metricMemories">0</strong><button class="link-button" data-go="memories" type="button">管理记忆</button></article>
+          <article class="panel metric-panel"><span>未完成待办</span><strong id="metricTodos">0</strong><button class="link-button" data-go="todos" type="button">查看待办</button></article>
+          <article class="panel metric-panel"><span>风格反馈</span><strong id="metricStyles">0</strong><button class="link-button" data-go="styles" type="button">查看沉淀</button></article>
+        </div>
+        <article class="panel config-panel">
+          <div class="panel-heading"><h3>当前配置</h3><span class="muted">敏感值不会显示</span></div>
+          <dl class="config-list">
+            <div><dt>适配器</dt><dd id="configAdapter">-</dd></div>
+            <div><dt>Agent</dt><dd id="configAgent">-</dd></div>
+            <div><dt>模型</dt><dd id="configModel">-</dd></div>
+            <div><dt>记忆轻量模型</dt><dd id="configLightModel">-</dd></div>
+            <div><dt>OpenClaw 调用</dt><dd id="configGateway">-</dd></div>
+            <div><dt>OneBot 地址</dt><dd id="configOnebot">-</dd></div>
+            <div><dt>代理</dt><dd id="configProxy">-</dd></div>
+            <div><dt>提醒状态</dt><dd id="configReminder">-</dd></div>
+            <div><dt>自动备份</dt><dd id="configBackup">-</dd></div>
+            <div><dt>自愈监控</dt><dd id="configWatchdog">-</dd></div>
+            <div><dt>状态存储</dt><dd id="configStorage">-</dd></div>
+            <div><dt>可靠队列</dt><dd id="configQueue">-</dd></div>
+            <div><dt>最近模型成功</dt><dd id="configAgentSuccess">-</dd></div>
+            <div><dt>最近投递成功</dt><dd id="configDeliverySuccess">-</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="view" id="view-memories">
+        <div class="section-heading"><div><p class="eyebrow">MEMORY</p><h2>长期记忆</h2></div><button id="clearMemories" class="button danger-quiet" type="button">清空记忆</button></div>
+        <div class="memory-status" id="memory2Status">正在读取 E3 记忆状态。</div>
+        <div class="subsection-heading"><div><p class="eyebrow">PENDING</p><h3>待确认事实</h3></div></div>
+        <div id="pendingMemoryList" class="item-list"></div>
+        <div class="subsection-heading"><div><p class="eyebrow">CONFIRMED</p><h3>已确认长期记忆</h3></div></div>
+        <form id="memoryForm" class="inline-form">
+          <label for="memoryInput">新增记忆</label>
+          <div><input id="memoryInput" name="memory" maxlength="500" placeholder="例如：我不吃香菜" required><button class="button primary" type="submit">记住</button></div>
+        </form>
+        <div id="memoryList" class="item-list"></div>
+        <div class="subsection-heading"><div><p class="eyebrow">SUMMARY</p><h3>最近对话摘要</h3></div></div>
+        <div id="memorySummaryList" class="item-list"></div>
+      </section>
+
+      <section class="view" id="view-todos">
+        <div class="section-heading"><div><p class="eyebrow">TODO</p><h2>待办与提醒</h2></div><div class="segmented"><button class="active" data-todo-filter="active" type="button">未完成</button><button data-todo-filter="all" type="button">全部</button><button data-todo-filter="done" type="button">已完成</button></div></div>
+        <form id="todoForm" class="inline-form">
+          <label for="todoInput">新增待办或提醒</label>
+          <div><input id="todoInput" name="todo" maxlength="500" placeholder="例如：明天上午10点提醒我开会" required><button class="button primary" type="submit">添加</button></div>
+        </form>
+        <div id="todoList" class="item-list"></div>
+      </section>
+
+      <section class="view" id="view-styles">
+        <div class="section-heading"><div><p class="eyebrow">STYLE</p><h2>风格沉淀</h2></div><button id="clearStyles" class="button danger-quiet" type="button">清空反馈</button></div>
+        <p class="section-note">这里只管理用户反馈沉淀，不会修改 chichu 的基础人设。</p>
+        <div id="styleList" class="item-list"></div>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <div class="section-heading"><div><p class="eyebrow">TASKS</p><h2>长任务队列</h2></div><p>查看执行阶段、耗时和取消状态。</p></div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>任务 ID</th><th>类型</th><th>状态</th><th>阶段</th><th>耗时</th><th>操作</th></tr></thead>
+            <tbody id="taskTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="view-models">
+        <div class="section-heading"><div><p class="eyebrow">MODELS</p><h2>模型调用统计</h2></div><p>最近 24 小时的调用、延迟、Token 和预算。</p></div>
+        <div class="table-scroll">
+          <table class="data-table wide-table">
+            <thead><tr><th>模型</th><th>用途</th><th>调用</th><th>失败</th><th>Token</th><th>P50</th><th>P95</th><th>今日费用 / 预算</th></tr></thead>
+            <tbody id="modelTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="view-approvals">
+        <div class="section-heading"><div><p class="eyebrow">APPROVALS</p><h2>审批中心</h2></div><p>只显示审批摘要，不展示命令和敏感参数。</p></div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>审批 ID</th><th>摘要</th><th>状态</th><th>创建时间</th><th>到期时间</th></tr></thead>
+            <tbody id="approvalTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="view-health">
+        <div class="section-heading"><div><p class="eyebrow">HEALTH</p><h2>健康时间线</h2></div><p>各组件最近的语义健康状态变化。</p></div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>时间</th><th>组件</th><th>状态</th></tr></thead>
+            <tbody id="healthTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="view-orchestration">
+        <div class="section-heading"><div><p class="eyebrow">ORCHESTRATION</p><h2>编排控制</h2></div><p>切换兼容路径并查看最近的执行轨迹。</p></div>
+        <div class="orchestration-grid">
+          <form id="orchestrationModeForm" class="settings-form orchestration-mode-form">
+            <label class="field" for="orchestrationModeInput"><span>运行模式</span>
+              <select id="orchestrationModeInput">
+                <option value="legacy_direct">legacy_direct · 兼容路径</option>
+                <option value="direct">direct · 编排运行时</option>
+              </select>
+            </label>
+            <p class="muted">保存只更新配置，不会自动重启服务。</p>
+            <button class="button primary" type="submit">保存模式</button>
+          </form>
+          <article class="panel metric-panel"><span>配置版本</span><strong id="orchestrationVersion">-</strong><small class="muted">当前激活版本</small></article>
+          <article class="panel metric-panel"><span>近期回退</span><strong id="orchestrationFallbacks">0</strong><small class="muted">最近 100 次运行</small></article>
+        </div>
+        <article class="panel config-panel orchestration-ops">
+          <div class="panel-heading"><h3>运维底座</h3><span class="muted">后续任务会逐项启用</span></div>
+          <dl class="config-list">
+            <div><dt>LaunchAgents</dt><dd id="opsLaunchAgents">-</dd></div>
+            <div><dt>日志轮转</dt><dd id="opsLogging">-</dd></div>
+            <div><dt>备份加密</dt><dd id="opsBackupEncryption">-</dd></div>
+          </dl>
+        </article>
+        <div class="subsection-heading"><div><p class="eyebrow">RUNS</p><h3>最近运行</h3></div></div>
+        <div class="table-scroll">
+          <table class="data-table wide-table">
+            <thead><tr><th>运行 ID</th><th>模式</th><th>风险</th><th>状态</th><th>版本</th><th>开始</th><th>耗时</th><th>回退 / 异常</th></tr></thead>
+            <tbody id="orchestrationRunTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="view-routing">
+        <div class="section-heading"><div><p class="eyebrow">SHADOW ROUTING</p><h2>影子路由</h2></div><p>观察分类建议与人工校正，不改变实际消息路径。</p></div>
+        <div id="routingGateList" class="routing-gate-list" aria-label="晋升门槛"></div>
+        <div class="routing-metrics" aria-label="影子路由指标">
+          <div><span>决策</span><strong id="routingDecisionCount">-</strong></div>
+          <div><span>已标注</span><strong id="routingLabeledCount">-</strong></div>
+          <div><span>标注准确率</span><strong id="routingAccuracy">-</strong></div>
+          <div><span>强制风险漏检</span><strong id="routingForcedRiskMisses">-</strong></div>
+          <div><span>分类 P95</span><strong id="routingClassifierP95">-</strong></div>
+          <div><span>分派开销 P95</span><strong id="routingOverheadP95">-</strong></div>
+        </div>
+        <form id="routingConfigForm" class="settings-form routing-config-form">
+          <div class="form-grid">
+            <label class="checkbox-field"><input id="routingEnabledInput" type="checkbox"><span>启用分类器</span></label>
+            <label class="field span-2" for="routingModelInput"><span>分类模型</span><input id="routingModelInput" maxlength="96" required></label>
+            <label class="field" for="routingConfidenceInput"><span>置信度阈值（%）</span><input id="routingConfidenceInput" type="number" min="50" max="100" required></label>
+            <label class="field" for="routingTimeoutInput"><span>分类超时（秒）</span><input id="routingTimeoutInput" type="number" min="1" max="120" required></label>
+            <label class="field" for="routingDailyCallsInput"><span>每日最大调用</span><input id="routingDailyCallsInput" type="number" min="0" max="10000" required></label>
+            <label class="field" for="routingFailureThresholdInput"><span>失败阈值</span><input id="routingFailureThresholdInput" type="number" min="1" max="20" required></label>
+            <label class="field" for="routingCooldownInput"><span>冷却时间（秒）</span><input id="routingCooldownInput" type="number" min="1" max="3600" required></label>
+            <label class="field" for="routingRuleVersionInput"><span>规则版本</span><input id="routingRuleVersionInput" maxlength="96" required></label>
+            <label class="field" for="routingRollbackVersionInput"><span>回滚到版本</span><input id="routingRollbackVersionInput" type="number" min="1" step="1" placeholder="版本号"></label>
+          </div>
+          <div class="form-actions"><span id="routingConfigVersion" class="muted">当前版本 -</span><div class="button-row"><button class="button secondary" type="submit" name="routingAction" value="rollback">回滚</button><button class="button primary" type="submit" name="routingAction" value="save">保存配置</button></div></div>
+        </form>
+        <div class="subsection-heading"><div><p class="eyebrow">MATRIX</p><h3>混淆矩阵</h3></div></div>
+        <div class="table-scroll">
+          <table class="data-table routing-matrix-table">
+            <thead><tr><th>预测 / 人工</th><th>L0</th><th>L1</th><th>L2</th><th>L3</th></tr></thead>
+            <tbody id="routingMatrixTableBody"></tbody>
+          </table>
+        </div>
+        <div class="subsection-heading"><div><p class="eyebrow">RECENT</p><h3>最近决策</h3></div></div>
+        <div class="table-scroll">
+          <table class="data-table wide-table routing-decision-table">
+            <thead><tr><th>时间</th><th>版本</th><th>规则</th><th>模型</th><th>最终</th><th>置信度</th><th>预览 / 原因</th><th>人工标注</th></tr></thead>
+            <tbody id="routingDecisionTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="view-media">
+        <div class="section-heading"><div><p class="eyebrow">MEDIA</p><h2>媒体能力设置</h2></div><p id="mediaStatus">正在读取媒体管线状态。</p></div>
+        <form id="mediaSettingsForm" class="settings-form">
+          <div class="form-grid">
+            <label class="checkbox-field"><input id="mediaEnabledInput" type="checkbox"><span>启用媒体管线</span></label>
+            <label class="field span-2" for="mediaBaseUrlInput"><span>API 基础地址</span><input id="mediaBaseUrlInput" type="url" maxlength="2048" placeholder="https://example.com/v1" required></label>
+            <label class="field" for="mediaImageModelInput"><span>图片模型</span><input id="mediaImageModelInput" maxlength="128" placeholder="image-model" required></label>
+            <label class="field" for="mediaAudioModelInput"><span>语音模型</span><input id="mediaAudioModelInput" maxlength="128" placeholder="audio-model" required></label>
+            <label class="field" for="mediaTimeoutInput"><span>超时（秒）</span><input id="mediaTimeoutInput" type="number" min="1" max="600" required></label>
+            <label class="field" for="mediaRateInput"><span>每分钟请求</span><input id="mediaRateInput" type="number" min="1" max="600" required></label>
+            <label class="field" for="mediaBudgetInput"><span>每日预算</span><input id="mediaBudgetInput" type="number" min="0" max="1000000" step="0.0001" placeholder="0 表示停用付费调用"></label>
+            <label class="field" for="mediaConcurrencyInput"><span>最大并发</span><input id="mediaConcurrencyInput" type="number" min="1" max="32" required></label>
+          </div>
+          <div class="form-actions"><span class="muted">保存后需重启智能体生效。</span><button class="button primary" type="submit">保存媒体设置</button></div>
+        </form>
+        <form id="mediaSecretForm" class="settings-form secret-form">
+          <div><h3>媒体 API 密钥</h3><p id="mediaSecretStatus" class="muted">密钥状态未知</p></div>
+          <label class="field" for="mediaSecretInput"><span>新密钥</span><input id="mediaSecretInput" type="password" maxlength="4096" autocomplete="new-password" placeholder="输入后写入 macOS Keychain" required></label>
+          <button class="button secondary" type="submit">更新密钥</button>
+        </form>
+      </section>
+
+      <section class="view" id="view-logs">
+        <div class="section-heading"><div><p class="eyebrow">LOGS</p><h2>运行日志</h2></div><button id="refreshLogs" class="button secondary" type="button">刷新日志</button></div>
+        <pre id="logOutput" class="log-output">正在读取日志...</pre>
+      </section>
+
+      <section class="view" id="view-backups">
+        <div class="section-heading"><div><p class="eyebrow">BACKUP</p><h2>备份与恢复</h2></div><div class="button-row"><button id="pruneBackups" class="button secondary" type="button">执行保留策略</button><button id="createBackup" class="button primary" type="button">创建手动备份</button></div></div>
+        <p id="backupPolicy" class="section-note">正在读取自动备份策略。</p>
+        <div id="backupList" class="item-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="confirmDialog">
+    <form method="dialog">
+      <h3 id="confirmTitle">确认操作</h3>
+      <p id="confirmMessage"></p>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">取消</button><button id="confirmAccept" class="button danger" value="confirm">确认执行</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="rescheduleDialog">
+    <form method="dialog" id="rescheduleForm">
+      <h3>修改提醒时间</h3>
+      <label for="rescheduleInput">新的时间</label>
+      <input id="rescheduleInput" maxlength="100" placeholder="明天晚上 / 2026-07-20 09:00" required>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">取消</button><button class="button primary" value="confirm">保存</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/assets/orchestration.js" defer></script>
+  <script src="/assets/routing.js" defer></script>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

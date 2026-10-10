@@ -1,0 +1,70 @@
+{
+  "enabled": true,
+  "ollama": {
+    "base_url": "http://127.0.0.1:11434",
+    "model": "qwen3:8b",
+    "allow_remote": false
+  },
+  "sources": [
+    {
+      "id": "reddit-synthetic-community",
+      "platform": "reddit",
+      "community": "synthetic_community",
+      "profile": "reddit-synthetic-style",
+      "schedule_seconds": 21600,
+      "authorizations": [
+        {
+          "subject_type": "author",
+          "subject_key": "synthetic_reddit_author",
+          "scope": "all_posts_until_revoke",
+          "evidence_ref": "consent-record-synthetic-reddit-author-001",
+          "granted_at": "2026-09-19T00:00:00Z"
+        },
+        {
+          "subject_type": "post",
+          "subject_key": "synthetic_reddit_post_001",
+          "scope": "single_post",
+          "evidence_ref": "consent-record-synthetic-reddit-post-001",
+          "granted_at": "2026-09-19T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "tieba-synthetic-community",
+      "platform": "tieba",
+      "community": "合成示例吧",
+      "profile": "tieba-synthetic-style",
+      "schedule_seconds": 21600,
+      "authorizations": [
+        {
+          "subject_type": "author",
+          "subject_key": "合成示例作者",
+          "scope": "all_posts_until_revoke",
+          "evidence_ref": "consent-record-synthetic-tieba-author-001",
+          "granted_at": "2026-09-19T00:00:00Z"
+        },
+        {
+          "subject_type": "post",
+          "subject_key": "9000000001",
+          "scope": "single_post",
+          "evidence_ref": "consent-record-synthetic-tieba-post-001",
+          "granted_at": "2026-09-19T00:00:00Z"
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "group_id": 700000001,
+      "profile": "reddit-synthetic-style",
+      "cooldown_seconds": 5,
+      "max_reply_chars": 800
+    },
+    {
+      "group_id": 700000002,
+      "profile": "tieba-synthetic-style",
+      "cooldown_seconds": 5,
+      "max_reply_chars": 800
+    }
+  ]
+}

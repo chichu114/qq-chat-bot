@@ -1,0 +1,23 @@
+.env
+.env.*
+!.env.example
+.DS_Store
+
+node_modules/
+node_modules
+.worktrees/
+.pnpm-store/
+.npm-cache/
+__pycache__/
+.pytest_cache/
+.venv/
+.venv
+venv/
+*.egg-info/
+
+logs/
+*.log
+
+# Local, consented source-derived training artifacts (never commit raw/generated data).
+datasets/kanagawawave_dialogue/
+datasets/kanagawawave_v2/

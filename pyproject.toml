@@ -1,0 +1,19 @@
+[project]
+name = "qq-openclaw-bridge"
+version = "0.1.0"
+description = "Private QQ personal-account bridge for an OpenClaw agent."
+requires-python = ">=3.9"
+dependencies = ["cryptography>=42,<47", "pypdf>=4,<7", "websockets>=12,<16"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+qq_openclaw_dashboard = ["static/*"]
+
+[tool.unittest]
+start-dir = "tests"

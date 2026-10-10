@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+if [[ ! -f "$PROJECT_DIR/scripts/bridge_service.sh" ]]; then
+  PROJECT_DIR="${HOME}/qq-chat-bot"
+fi
+SERVICE_SCRIPT="$PROJECT_DIR/scripts/bridge_service.sh"
+WATCHDOG_SCRIPT="$PROJECT_DIR/scripts/watchdog_service.sh"
+LOG_FILE="$PROJECT_DIR/logs/bridge.log"
+
+if /bin/bash "$SERVICE_SCRIPT" start >/tmp/qq-openclaw-start.out 2>&1; then
+  if ! /bin/bash "$WATCHDOG_SCRIPT" start >>/tmp/qq-openclaw-start.out 2>&1; then
+    /bin/bash "$SERVICE_SCRIPT" stop >/dev/null 2>&1 || true
+    /usr/bin/osascript -e 'display dialog "QQ智能体自愈监控启动失败。请查看项目里的 logs/watchdog.log。" buttons {"好"} default button "好" with title "QQ智能体"'
+    exit 1
+  fi
+  /usr/bin/osascript -e 'display notification "桥接服务已在后台运行，可以给机器人 QQ 发私聊。" with title "QQ智能体"'
+  exit 0
+fi
+
+/usr/bin/osascript -e 'display dialog "QQ智能体启动失败。请查看项目里的 logs/bridge.log 或 logs/watchdog.log。" buttons {"好"} default button "好" with title "QQ智能体"'
+printf 'QQ智能体启动失败。日志：%s\n' "$LOG_FILE" >&2
+cat /tmp/qq-openclaw-start.out >&2
+exit 1
