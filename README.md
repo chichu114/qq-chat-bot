@@ -1,6 +1,28 @@
 # QQ 个人账号 OpenClaw 私聊桥接
 
-这个项目是一个本地最小可用桥接服务：NapCatQQ 负责登录普通个人 QQ 号并暴露 OneBot v11 WebSocket，桥接服务负责过滤私聊消息、调用 OpenClaw 智能体，再把文本回复发回 QQ。
+这个项目是在 NapCatQQ 与 OneBot v11 之上增加智能体能力的本地桥接服务。
+
+## 架构定位：在 NapCat + OneBot 之上的升级
+
+NapCatQQ 提供 QQ 登录与会话层，OneBot v11 提供标准事件与动作协议；本项目在它们
+上方增加消息路由、权限策略、模型调用、可靠投递和健康恢复。这是对现有架构的能力扩展，
+不是对 NapCat 或 OneBot 源码的修改。
+
+```text
+QQ -> NapCatQQ -> OneBot v11 WebSocket -> 本项目桥接与策略层
+   -> OpenClaw / Ollama -> 可靠发件箱 -> OneBot v11 -> NapCatQQ -> QQ
+```
+
+主要升级包括：
+
+- 私聊与群聊分流：私聊可走 OpenClaw，授权群聊可绑定独立 Ollama 风格模型；
+- KanagawaWave 风格模型：支持 `@`/回复触发、模型判断后的主动插话和按群绑定；
+- 本地策略层：白名单、限流、风格学习、敏感词谐音替换和高风险操作确认；
+- 可靠发件箱：模型完成和 QQ 投递分离，支持去重、重试和失败审计；
+- 受限自愈监控：独立 watchdog 检查 Bridge、OneBot 与 NapCat 状态，并在阈值内恢复。
+
+项目各阶段、已完成能力、默认关闭模块和后续路线见
+[总体设计与完成状态](docs/overall-design-status-zh.md)。
 
 ## 重要提醒
 
@@ -84,6 +106,33 @@ cp .env.example .env
 `ENABLE_GROUP_AGENT=false` 关闭。它只学习已授权贴文的抽象表达风格，
 不学习事实，也不把来源原文带进群聊提示词。默认只响应 `@机器人` 或回复机器人；
 主动插话必须再显式启用。
+
+### 现有 KanagawaWave v2 CUDA 训练包
+
+仓库已经提交了之前实际使用的训练方案，位于
+[`training/kanagawawave_v2`](training/kanagawawave_v2/README_zh.md)：它固定使用
+LLaMA-Factory、`Qwen/Qwen3-4B-Instruct-2507`、`qwen3_nothink` 与 4-bit NF4 QLoRA，
+并提供 RTX 4060 8GB 和低显存两份配置。它是可复现的 KanagawaWave v2 固定配方，
+不是全模型通用训练器。
+
+把已经生成并通过审核的 v2 数据集打成训练包：
+
+```bash
+python scripts/package_kanagawave_v2_training.py \
+  --dataset-dir datasets/kanagawawave_v2 \
+  --output-zip KanagawaWave-v2-training.zip
+```
+
+在 CUDA 训练机上解压并校验后即可开始训练：
+
+```bash
+python scripts/validate_kanagawawave_v2_bundle.py .
+llamafactory-cli train configs/train_4060_8gb.yaml
+```
+
+数据集必须保持现有 `instruction` / `input` / `output` 契约、固定提示词和清单哈希；
+打包器不会接受任意未经校验的原始文本。完整的继续训练、合并和 Ollama 导入说明见
+[训练包说明](training/kanagawawave_v2/README_zh.md)。
 
 ### 1. 安装本地 Ollama
 

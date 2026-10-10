@@ -5,6 +5,18 @@ LLaMA-Factory 对 `Qwen/Qwen3-4B-Instruct-2507` 做 4-bit NF4 QLoRA
 微调。它只包含经审核的数据集成品、固定训练模板和离线校验信息；不包含
 Reddit 原始归档、抓取元数据或断点文件。
 
+## 适配范围
+
+本训练配方直接适配 `Qwen/Qwen3-4B-Instruct-2507`，并固定使用
+`qwen3_nothink` 对话模板、LoRA rank 8、alpha 16 和 4-bit NF4 量化。训练得到的
+adapter 必须与同一个基础模型及版本合并，不能直接套到其他模型家族，也不能把
+Qwen3 adapter 挂到 Llama、Mistral、Gemma 或其他参数规模的 Qwen 模型上。
+
+项目运行时通过 Ollama 模型标签发起标准聊天请求，因此运行时并不把模型名写死；
+但“能够被调用”不等于“已经学会 KanagawaWave 风格”。本包只对上述 Qwen3-4B
+训练链路负责。若更换基础模型，必须另行选择正确的对话模板、LoRA 目标层、显存参数，
+重新训练和验收；当前配置不宣称全模型兼容。
+
 ## 1. 环境准备
 
 建议使用 Linux、WSL2 或可正常运行 CUDA 的 Windows 环境，并先安装与显卡
@@ -63,7 +75,34 @@ llamafactory-cli export configs/merge.yaml
 如果训练使用了低显存输出目录，请先在 `chat.yaml` 和 `merge.yaml` 中把
 `adapter_name_or_path` 改成低显存目录。
 
-## 6. 返回部署机
+## 6. 导入 Ollama
+
+合并产物是 Hugging Face Safetensors 目录。先在
+`outputs/qwen3-4b-kanagawawave-v2-merged/` 中创建 `Modelfile`：
+
+```text
+FROM .
+```
+
+然后在训练包根目录执行：
+
+```bash
+ollama create qwen3-4b-kanagawawave-v2 \
+  -f outputs/qwen3-4b-kanagawawave-v2-merged/Modelfile
+ollama run qwen3-4b-kanagawawave-v2
+```
+
+Ollama 只能直接导入其当前版本支持架构的 Safetensors。若当前 Ollama 拒绝该
+Safetensors 目录，需要使用支持该 Qwen3 版本的 llama.cpp 将合并模型转换并量化为
+GGUF，再让 `Modelfile` 使用 `FROM ./模型文件.gguf`。本项目不捆绑 llama.cpp，也不把
+“Transformers 可以训练”视为“Ollama 一定可以直接导入”；实际导入结果以所安装的
+Ollama 与 llama.cpp 版本为准。
+
+导入完成后，把群配置的 `ollama.model` 或白名单私聊使用的模型标签设为
+`qwen3-4b-kanagawawave-v2:latest`，再运行 readiness 并重启 Bridge。不要在确认新模型
+可正常生成前覆盖原有可用模型标签。
+
+## 7. 返回部署机
 
 请把以下内容打包返回：
 
